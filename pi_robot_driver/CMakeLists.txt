@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   serial
   std_msgs
   joint_limits_interface
+  urdf
 )
 
 generate_dynamic_reconfigure_options(
