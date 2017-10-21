@@ -33,7 +33,7 @@ namespace PiRobot{
 
         std::vector<joint_limits_interface::JointLimits> joint_limits(joints.size());
         for (int i = 0; i < joints.size(); i++) {
-            boost::shared_ptr<const urdf::Joint> urdf_joint = urdf.getJoint(joints[i]);
+            urdf::JointConstSharedPtr urdf_joint = urdf.getJoint(joints[i]);
 
             //get limits from urdf
             if (urdf_joint) {
