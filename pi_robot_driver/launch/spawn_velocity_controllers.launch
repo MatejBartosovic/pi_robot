@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<launch>
+    <include file="$(find pi_robot_driver)/launch/load_controllers_config.launch"/>
+    <node  name="controller_manager" pkg="controller_manager" type="controller_manager" args="spawn joint_state_controller left_motor_velocity_controller right_motor_velocity_controller"/>
+</launch>

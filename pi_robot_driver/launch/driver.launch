@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+    <node  name="robot_driver" pkg="pi_robot_driver" type="pi_robot_driver_node" output="screen">
+        <rosparam file="$(find pi_robot_driver)/config/Hardware.yaml" command="load"/>
+        <rosparam file="$(find pi_robot_driver)/config/Communication.yaml" command="load"/>
+        <remap from="/diff_drive_controller/odom" to="odom"/>
+        <remap from="/diff_drive_controller/cmd_vel" to="cmd_vel"/>
+    </node>
+</launch>

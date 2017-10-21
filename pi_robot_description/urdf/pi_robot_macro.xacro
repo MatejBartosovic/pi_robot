@@ -1,0 +1,49 @@
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+    <xacro:macro name="pi_robot" params="prefix">
+        <!-- link list -->
+        <link name="${prefix}base_link">
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <!--mesh filename=""/-->
+                    <box size="0.12 0.1 0.05"/>
+                </geometry>
+                <material name="abb_white">
+                    <color rgba="0.8 0.8 0.8 1"/>
+                </material>
+            </visual>
+            <collision>
+                <geometry>
+                    <!--mesh filename=""/-->
+                    <box size="0.12 0.1 0.05"/>
+                </geometry>
+                <material name="yellow">
+                    <color rgba="0 1 1 1"/>
+                </material>
+            </collision>
+        </link>
+
+        <link name="${prefix}left_wheel"/>
+
+        <link name="${prefix}right_wheel"/>
+        <!-- end of link list -->
+
+        <!-- joint list -->
+        <joint name="${prefix}right_wheel_joint" type="continuous">
+            <origin xyz="0.0 0.05 0.0" rpy="0 0 0"/>
+            <parent link="${prefix}base_link"/>
+            <child link="${prefix}right_wheel"/>
+            <axis xyz="0 1 0"/>
+            <limit velocity="3.14" effort="0.0"/>
+        </joint>
+
+        <joint name="${prefix}left_wheel_joint" type="continuous">
+            <origin xyz="0.0 -0.05 0.0" rpy="0 0 0"/>
+            <parent link="${prefix}base_link"/>
+            <child link="${prefix}left_wheel"/>
+            <axis xyz="0 1 0"/>
+            <limit velocity="3.14" effort="0.0"/>
+        </joint>
+
+    </xacro:macro>
+</robot>

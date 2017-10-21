@@ -1,0 +1,3 @@
+port: /dev/ttyS0
+baud: 460800
+time_out: 1500

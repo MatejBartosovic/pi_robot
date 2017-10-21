@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<launch>
+    <include file="$(find pi_robot_description)/launch/load.launch"/>
+    <include file="$(find pi_robot_driver)/launch/driver.launch"/>
+    <include file="$(find pi_robot_driver)/launch/spawn_diff_drive_controller.launch"/>
+</launch>

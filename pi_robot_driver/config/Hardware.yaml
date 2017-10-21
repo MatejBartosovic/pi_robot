@@ -1,0 +1,12 @@
+joint_names: [left_wheel_joint, right_wheel_joint]
+joint_limits:
+  left_wheel_joint:
+    has_acceleration_limits: true
+    max_acceleration: 55 #rad*s^(-2)
+    has_velocity_limits: true
+    max_velocity: 2.0
+  right_wheel_joint:
+    has_acceleration_limits: true
+    max_acceleration: 55 #rad*s^(-2)
+    has_velocity_limits: true
+    max_velocity: 2.0
