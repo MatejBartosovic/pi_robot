@@ -12,8 +12,8 @@ namespace PiRobot{
         Communication::read();
         ros::Time currentTime = ros::Time::now();
         ros::Duration duration =  currentTime - lastTime;
-        enforceLimits(duration);
         controller_manager::ControllerManager::update(currentTime,duration);
+        enforceLimits(duration);
         Communication::write();
         lastTime = currentTime;
     }

@@ -23,21 +23,25 @@ namespace PiRobot{
         }catch (std::exception& e){
             ROS_ERROR("pi_robot: port don't open: %s", e.what());
         }
-        serial->flushInput();
+        ROS_INFO("Port oppened");
     }
     void Communication::read(){
         InMessage msg;
         serial->flushInput(); //this have to be here because of stream and bad synchronization on startup (old messages was read out)
         if(serial->read(msg.get(),msg.size())!= msg.size()){
             ROS_ERROR("Timeout");
-            vel = std::vector<double>(2,0);
-            pos = std::vector<double>(2,0);
+            vel[0] = 0;
+            vel[1] = 0;
+            pos[0] = 0;
+            pos[1] = 0;
             return;
         }
         if(msg.check()){
             if(msg.getFlags() & Message::Odometry){
-                memcpy(&vel,msg.getVel(),2* sizeof(float));
-                memcpy(&pos,msg.getPos(),2* sizeof(float));
+                pos[0] = msg.getLeftPos();
+                pos[1] = msg.getRightPos();
+                vel[0] = msg.getLeftVel();
+                vel[1] = msg.getRightVel();
             }
             if(msg.error()){
                 ROS_ERROR("Robot responded with error.");
@@ -89,11 +93,13 @@ namespace PiRobot{
                     continue;
                 }
                 if(!msg.checkCrc()){
-                    ROS_ERROR("header %d %d",*msg.get(),*(msg.get()+1));
+                    ROS_WARN("Bad crc while symcimg, header: %d %d",*msg.get(),*(msg.get()+1));
                     continue;
                 }
-                memcpy(&vel,msg.getVel(),2* sizeof(float));
-                memcpy(&pos,msg.getPos(),2* sizeof(float));
+                pos[0] = msg.getLeftPos();
+                pos[1] = msg.getRightPos();
+                vel[0] = msg.getLeftVel();
+                vel[1] = msg.getRightVel();
                 ROS_INFO("Synced. count = %d",count);
                 return;
             }

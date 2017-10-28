@@ -55,6 +55,7 @@ namespace PiRobot{
         bool error();
         uint8_t getFlags();
         uint8_t *get();
+        uint16_t getHeader();
         bool operator==(Message &other){
             return this->getFlags() == other.getFlags();
         }
@@ -90,13 +91,18 @@ namespace PiRobot{
         bool checkCrc();
         uint8_t* getVel();
         uint8_t* getPos();
+        float getLeftVel();
+        float getRightVel();
+        float getLeftPos();
+        float getRightPos();
+        uint8_t getCrc();
 
     private:
         typedef struct __attribute__((__packed__)) : BaseMsg{
+            float leftPos;
+            float rightPos;
             float leftVel;
             float rightVel;
-            float leftPos;
-            float righrPos;
             uint8_t crc;
         } Data;
         Data msg;

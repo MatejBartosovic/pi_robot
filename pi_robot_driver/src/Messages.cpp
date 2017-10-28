@@ -43,6 +43,10 @@ namespace PiRobot{
         return baseMsg.msgType;
     }
 
+    uint16_t Message::getHeader(){
+        return baseMsg.header;
+    }
+
     OutMessage::OutMessage(float data1, float data2, uint8_t msgType) : Message(msg){
         msg.header = Header;
         msg.msgType = msgType;
@@ -79,9 +83,25 @@ namespace PiRobot{
 
     bool InMessage::checkCrc(){
         if(msg.crc != computeCRC(get(),size()-1)){
+	    ROS_ERROR("Input message bad crc. Expected %x, got %x ",msg.crc,computeCRC(get(),size()-1));
             return false;
         }
         return true;
     }
 
+    float InMessage::getLeftVel(){
+        return msg.leftVel;
+    }
+    float InMessage::getRightVel(){
+        return msg.rightVel;
+    }
+    float InMessage::getLeftPos(){
+        return msg.leftPos;
+    }
+    float InMessage::getRightPos(){
+        return msg.rightPos;
+    }
+    uint8_t InMessage::getCrc(){
+        return msg.crc;
+    }
 }

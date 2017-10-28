@@ -54,13 +54,14 @@ namespace PiRobot{
 
     void Hardware::dynamicReconfigureCallback(pi_robot_driver::PiRobotDynamicReconfigureConfig &config, uint32_t level) {
         ROS_INFO("Reconfigure Request");
-        if(level&Message::SetP)
+        /*if(level&Message::SetP)
             messageQueue.push(std::shared_ptr<OutMessage>(new OutMessage(config.left_P,config.right_P,Message::SetP)));
         if(level&Message::SetI)
             messageQueue.push(std::shared_ptr<OutMessage>(new OutMessage(config.left_I,config.right_I,Message::SetI)));
         if(level&Message::SetD)
             messageQueue.push(std::shared_ptr<OutMessage>(new OutMessage(config.left_D,config.right_D,Message::SetD)));
-        return;
+*/        
+return;
     }
 
 }
