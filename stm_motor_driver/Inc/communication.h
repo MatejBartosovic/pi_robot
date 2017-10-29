@@ -20,16 +20,15 @@
 #define MSG_TYPE_SETD         0b00100000
 #define MSG_TYPE_ODOMETRY     0b01000000
 #define MSG_TYPE_RESET        0b10000000
-#define PERIOD 				  0.002
 
 typedef struct __attribute__((__packed__)){
-            uint16_t header;
-            uint8_t msgType;
-            float leftVel;
-            float rightVel;
-            float leftPos;
-            float righrPos;
-            uint8_t crc;
+            uint16_t header __attribute__((__packed__));
+            uint16_t msgType __attribute__((__packed__));
+            float leftVel __attribute__((__packed__));
+            float rightVel __attribute__((__packed__));
+            float leftPos __attribute__((__packed__));
+            float rightPos __attribute__((__packed__));
+            uint16_t crc __attribute__((__packed__));
         } OutMsg;
 
 typedef struct __attribute__((__packed__)){
@@ -40,8 +39,8 @@ typedef struct __attribute__((__packed__)){
 	uint8_t crc;
 } InMsg;
 
-uint8_t computeCRC(uint8_t *buffer, unsigned int num);
-void sendOdom(float* data, uint8_t MSG_TYPE,UART_HandleTypeDef* uart );
+uint8_t computeCRC(const uint8_t *buffer, unsigned int num);
+void sendOdom(volatile float* data, uint8_t MSG_TYPE,UART_HandleTypeDef* uart );
 bool checkMsg(InMsg* msg);
 
 #endif /* COMMUNICATION_H_ */

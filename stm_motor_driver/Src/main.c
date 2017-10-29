@@ -60,9 +60,9 @@ DMA_HandleTypeDef hdma_usart2_tx;
 /* Private variables ---------------------------------------------------------*/
 volatile float feedback[4];
 InMsg inMsg;
-volatile float goal[2];
 volatile PidConfig pidConfig[2];
 volatile uint8_t comFlag = 0x00;
+volatile bool safetyStop;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -86,17 +86,16 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* USER CODE BEGIN 0 */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
-	  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_2);
-	  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_3);
 	  if(!checkMsg(&inMsg)){
 		  comFlag = MSG_TYPE_ERROR;
 		  return;
 	  }
 	  comFlag = MSG_TYPE_OK;
 	  if(inMsg.msgType & MSG_TYPE_SETPOINT){
-		  goal[0] = inMsg.data1;
-		  goal[1] = inMsg.data2;
+		  pidConfig[0].goal = inMsg.data1;
+		  pidConfig[1].goal = inMsg.data2;
 		  comFlag |= MSG_TYPE_SETPOINT;
+		  safetyStop = false;
 	  }
 	  else if(inMsg.msgType & MSG_TYPE_RESET){
 		  comFlag |= MSG_TYPE_RESET;
@@ -108,30 +107,76 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 	  }
 	  else if(inMsg.msgType & MSG_TYPE_SETI){
 		  pidConfig[0].i_gain = inMsg.data1;
-		  pidConfig[0].i_gain = inMsg.data2;
+		  pidConfig[1].i_gain = inMsg.data2;
 		  comFlag |= MSG_TYPE_SETI;
 	  }
 	  else if(inMsg.msgType & MSG_TYPE_SETD){
 		  pidConfig[0].d_gain = inMsg.data1;
-		  pidConfig[0].d_gain = inMsg.data2;
+		  pidConfig[1].d_gain = inMsg.data2;
 		  comFlag |= MSG_TYPE_SETD;
 	  }
 	  return;
 }
 
+void write_motors(int left, int right){
+	if (left >0){
+		HAL_GPIO_WritePin(GPIOA, LEFT_MOTOR_DIR_PIN,LEFT_MOTOR_FORWARD);
+	}
+	else{
+		HAL_GPIO_WritePin(GPIOA, LEFT_MOTOR_DIR_PIN,LEFT_MOTOR_BACKWARD);
+	}
+	if(right>0){
+		HAL_GPIO_WritePin(GPIOA, RIGHT_MOTOR_DIR_PIN,RIGHT_MOTOR_FORWARD);
+	}
+	else{
+		HAL_GPIO_WritePin(GPIOA, RIGHT_MOTOR_DIR_PIN,RIGHT_MOTOR_BACKWARD);
+	}
+	//TIM3->CCR1 = abs(left);
+	//TIM3->CCR2 = abs(right);
+	LEFT_MOTOR_SET = abs(left);
+	RIGHT_MOTOR_SET = abs(right);
+
+}
+
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	if(htim->Instance == htim6.Instance){
-		uint16_t rawFeedback[] = {TIM1->CNT,TIM2->CNT};
-		TIM1->CNT = ENCODER_RESET_VALUE;
-		TIM2->CNT = ENCODER_RESET_VALUE;
-		feedback[0] = PULSE2RAD((long int)(rawFeedback[0] - ENCODER_RESET_VALUE)); 	//pos in rad
-		feedback[1] = PULSE2RAD((long int)(rawFeedback[1] - ENCODER_RESET_VALUE));	//pos in rad
-		feedback[2] = feedback[0]/PERIOD;											//vel in rad/s
-		feedback[3] = feedback[1]/PERIOD;											//vel in rad/s
-		sendOdom(feedback,(MSG_TYPE_ODOMETRY | comFlag),&huart2);
+
+		//read valuse from encoders
+		uint16_t rawFeedback[] = {LEFT_MOTOR_FEEDBACK,RIGHT_MOTOR_FEEDBACK};
+		//reset encoders
+		LEFT_MOTOR_FEEDBACK = ENCODER_RESET_VALUE;
+		RIGHT_MOTOR_FEEDBACK = ENCODER_RESET_VALUE;
+
+		//transform impulses to radians
+		feedback[0] = PULSE2RAD((rawFeedback[0] - ENCODER_RESET_VALUE)); 					//pos in rad
+		feedback[1] = PULSE2RAD_NEGATIVE((rawFeedback[1] - ENCODER_RESET_VALUE));			//pos in rad
+
+		//calculate current velocity, multiplication is faster than division
+		feedback[2] = feedback[0]*INV_PERIOD;												//vel in rad/s
+		feedback[3] = feedback[1]*INV_PERIOD;				 								//vel in rad/s
+
+		//send odometry data
+		uint8_t flags = (MSG_TYPE_ODOMETRY | comFlag);
 		comFlag = 0x00;
-		//pidUpdate();
+		sendOdom(feedback,(MSG_TYPE_ODOMETRY | flags),&huart2);
+
+		//run pid algorithm on each motor
+		pid(&pidConfig[0]);
+		pid(&pidConfig[1]);
+
+		//write pid output to motors
+		write_motors(pidConfig[0].u,pidConfig[1].u);
+		//write_motors(pidConfig[0].u,0);
+		return;
+	}
+	if(htim->Instance == htim7.Instance){
+		//safety timer
+		if(safetyStop){
+			pidConfig[0].goal = 0.0;
+			pidConfig[1].goal = 0.0;
+		}
+		safetyStop = true;
 	}
 }
 /* USER CODE END 0 */
@@ -140,6 +185,25 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
+	pidConfig[0].p_gain = 20.0;
+	pidConfig[0].i_gain = 2.0;
+	pidConfig[0].d_gain = 0.0;
+	pidConfig[0].integral =0.0;
+	pidConfig[0].u = 0.0;
+	pidConfig[0].y = (feedback+2);
+	pidConfig[0].goal = 0.0;
+	pidConfig[0].min = -900;
+	pidConfig[0].max = 900;
+
+	pidConfig[1].p_gain = 20.0;
+	pidConfig[1].i_gain = 2.0;
+	pidConfig[1].d_gain = 0.0;
+	pidConfig[1].integral =0.0;
+	pidConfig[1].u = 0.0;
+	pidConfig[1].y = (feedback+3);
+	pidConfig[1].goal = 0.0;
+	pidConfig[1].min = -900;
+	pidConfig[1].max = 900;
 
   /* USER CODE END 1 */
 
@@ -171,16 +235,33 @@ int main(void)
 
   /* USER CODE BEGIN 2 */
 
+  //start encoders
   HAL_TIM_Encoder_Start(&htim1,TIM_CHANNEL_ALL);
   HAL_TIM_Encoder_Start(&htim2,TIM_CHANNEL_ALL);
 
-  HAL_TIM_Base_Start(&htim3);
+  //reset encoders
+  LEFT_MOTOR_FEEDBACK = ENCODER_RESET_VALUE;
+  RIGHT_MOTOR_FEEDBACK = ENCODER_RESET_VALUE;
+
+
+  //start pwm generation
   HAL_TIM_PWM_Start(&htim3,TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim3,TIM_CHANNEL_2);
 
+  //stop motors
+  write_motors(0,0);
+  //start pwm
+  HAL_TIM_Base_Start(&htim3);
+
+  //start communication
   HAL_UART_Receive_DMA(&huart2,(uint8_t*)(&inMsg),sizeof(InMsg));
 
+  //start safety timer
+  HAL_TIM_Base_Start_IT(&htim7);
+
+  //start regulation
   HAL_TIM_Base_Start_IT(&htim6);
+
 
   /* USER CODE END 2 */
 
@@ -354,7 +435,7 @@ static void MX_TIM3_Init(void)
 
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
   sConfigOC.Pulse = 0;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_LOW;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
   {

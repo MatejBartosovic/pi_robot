@@ -8,10 +8,10 @@
 #ifndef PID_H_
 #define PID_H_
 typedef struct {
-	float p_gain, i_gain, d_gain, period;
+	float p_gain, i_gain, d_gain, goal,u, integral,e;
 	int min, max;
-	float *feedback, *output;
+	volatile float *y;
 } PidConfig;
 
-void pidUpdate(float goal, PidConfig *cnofig);
+void pid(volatile PidConfig *cnofig);
 #endif /* PID_H_ */
