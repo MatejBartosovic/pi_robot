@@ -21,6 +21,7 @@ namespace PiRobot{
         serial::Serial* serial;
         std::vector<double> last_vel_cmd;
         uint8_t expectedAnswer;
+        ros::Time lastGoalTime;
     };
 }
 #endif //PROJECT_PIROBOTCOMUNICATION_H

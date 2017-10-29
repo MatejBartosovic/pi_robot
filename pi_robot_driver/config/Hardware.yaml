@@ -4,9 +4,9 @@ joint_limits:
     has_acceleration_limits: false
     max_acceleration: 55 #rad*s^(-2)
     has_velocity_limits: true
-    max_velocity: 2.0
+    max_velocity: 55.0
   right_wheel_joint:
     has_acceleration_limits: false
     max_acceleration: 55 #rad*s^(-2)
     has_velocity_limits: true
-    max_velocity: 2.0
+    max_velocity: 55.0

@@ -8,7 +8,7 @@
 
 namespace PiRobot{
 
-    Communication::Communication() : last_vel_cmd(2,0), expectedAnswer(0x00){
+    Communication::Communication() : last_vel_cmd(2,1.0), expectedAnswer(0x00),lastGoalTime(ros::Time::now()){
         ros::NodeHandle nh("~");
         std::string port;
         double baud;
@@ -59,12 +59,12 @@ namespace PiRobot{
     }
 
     void Communication::write(){
-        if(vel_cmd != last_vel_cmd){
+        if((vel_cmd != last_vel_cmd) || (ros::Time::now()-lastGoalTime > ros::Duration(0.4))){
             OutMessage msg(vel_cmd[0],vel_cmd[1]);
-            ROS_WARN("New set point %lf %lf",vel_cmd[0],vel_cmd[1]);
+            //ROS_WARN("New set point %lf %lf",vel_cmd[0],vel_cmd[1]);
             serial->write(msg.get(), msg.size());
             last_vel_cmd = vel_cmd;
-
+            lastGoalTime = ros::Time::now();
         }
         else if (!messageQueue.empty()){
             for (int i = 0; i< vel.size(); i++){
